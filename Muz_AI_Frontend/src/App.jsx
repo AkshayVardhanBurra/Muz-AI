@@ -1,24 +1,28 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
+import AuthPage from "./pages/AuthPage.jsx";
+import Home from "./pages/Home.jsx";
 
-import { createClient } from '@supabase/supabase-js'
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-)
-
+const router = createBrowserRouter([
+	{
+		path: "/",
+		element: <Navigate to="/home" replace />,
+	},
+	{
+		path: "/home",
+		element: <Home />,
+	},
+	{
+		path: "/authentication",
+		element: <AuthPage />,
+	},
+	{
+		path: "*",
+		element: <Navigate to="/home" replace />,
+	},
+]);
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-     
-    </>
-  )
+	return <RouterProvider router={router} />;
 }
 
-export default App
+export default App;

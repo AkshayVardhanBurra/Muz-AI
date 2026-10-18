@@ -1,0 +1,102 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { Button } from "@base-ui/react/button";
+import { Input } from "@base-ui/react/input";
+import { supabase } from "../lib/supabaseClient";
+
+export default function AuthPage() {
+	const navigate = useNavigate();
+	const [mode, setMode] = useState("login");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [notice, setNotice] = useState("");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+	const isSignUp = mode === "signup";
+
+	async function handleSubmit(event) {
+		event.preventDefault();
+		setNotice("");
+		setError("");
+		setLoading(true);
+
+		try {
+			const { error: authError } = isSignUp
+				? await supabase.auth.signUp({ email, password })
+				: await supabase.auth.signInWithPassword({ email, password });
+
+			if (authError) throw authError;
+			if (!isSignUp) {
+				navigate("/home");
+				return;
+			}
+
+			setNotice(
+				"Account created. Check your email to confirm your account."
+			);
+		} catch (authError) {
+			setError(authError.message || "Authentication failed. Please try again.");
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	function toggleMode() {
+		setMode(isSignUp ? "login" : "signup");
+		setNotice("");
+		setError("");
+	}
+
+	return (
+		<main className="grid min-h-screen place-items-center bg-[#f5f6fa] p-6 font-[Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe_UI',sans-serif] text-[#171923]">
+			<section className="box-border w-full max-w-[420px] rounded-2xl bg-white p-10 shadow-[0_12px_40px_rgba(22,27,45,0.09)]">
+				<div className="mb-7 text-lg font-bold text-[#635bff]">Muz AI</div>
+				<h1 className="m-0 text-[28px] tracking-[-0.6px]">{isSignUp ? "Create your account" : "Welcome back"}</h1>
+				<p className="my-2.5 mb-7 text-[15px] text-[#687080]">
+					{isSignUp ? "Sign up to get started." : "Log in to continue to your account."}
+				</p>
+
+				<form onSubmit={handleSubmit} className="flex flex-col">
+					<label htmlFor="auth-email" className="mb-2 text-sm font-semibold">Email</label>
+					<Input
+						id="auth-email"
+						type="email"
+						autoComplete="email"
+						placeholder="you@example.com"
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
+						required
+						className="mb-5 box-border w-full rounded-lg border border-[#d9dce5] px-3.5 py-3 text-[15px] outline-[#635bff]"
+					/>
+
+					<label htmlFor="auth-password" className="mb-2 text-sm font-semibold">Password</label>
+					<Input
+						id="auth-password"
+						type="password"
+						autoComplete={isSignUp ? "new-password" : "current-password"}
+						placeholder="At least 6 characters"
+						value={password}
+						onChange={(event) => setPassword(event.target.value)}
+						minLength={6}
+						required
+						className="mb-5 box-border w-full rounded-lg border border-[#d9dce5] px-3.5 py-3 text-[15px] outline-[#635bff]"
+					/>
+
+					{error && <p role="alert" className="-mt-2 mb-4 text-sm text-[#c62828]">{error}</p>}
+					{notice && <p role="status" className="-mt-2 mb-4 text-sm text-[#197244]">{notice}</p>}
+
+					<Button type="submit" disabled={loading} className="cursor-pointer rounded-lg border-0 bg-[#635bff] px-4 py-[13px] text-[15px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60">
+						{loading ? "Please wait…" : isSignUp ? "Create account" : "Log in"}
+					</Button>
+				</form>
+
+				<p className="mt-6 text-center text-sm text-[#687080]">
+					{isSignUp ? "Already have an account? " : "New to Muz AI? "}
+					<button type="button" onClick={toggleMode} className="cursor-pointer border-0 bg-transparent p-0 font-inherit font-semibold text-[#5148e5]">
+						{isSignUp ? "Log in" : "Sign up"}
+					</button>
+				</p>
+			</section>
+		</main>
+	);
+}
