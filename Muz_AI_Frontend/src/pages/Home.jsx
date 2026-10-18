@@ -1,183 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { supabase } from "../lib/supabaseClient";
-
-const snarePitch = 38;
-
-export const projects = [
-	{
-		id: "proj_001",
-		name: "Midnight Dreams",
-		tempo: 120,
-		tracks: [
-			{
-				instrument: "synth",
-				notes: [
-					{ step: 0, pitch: 60, duration: 1 },
-					{ step: 4, pitch: 64, duration: 1 },
-					{ step: 8, pitch: 67, duration: 2 },
-					{ step: 12, pitch: 72, duration: 1 },
-				],
-			},
-			{
-				instrument: "kick",
-				notes: [
-					{ step: 0, pitch: 36, duration: 1 },
-					{ step: 4, pitch: 36, duration: 1 },
-					{ step: 8, pitch: 36, duration: 1 },
-					{ step: 12, pitch: 36, duration: 1 },
-				],
-			},
-			{
-				instrument: "bass",
-				notes: [
-					{ step: 0, pitch: 40, duration: 2 },
-					{ step: 6, pitch: 43, duration: 2 },
-					{ step: 10, pitch: 45, duration: 2 },
-				],
-			},
-		],
-	},
-	{
-		id: "proj_002",
-		name: "Pixel Adventure",
-		tempo: 140,
-		tracks: [
-			{
-				instrument: "square",
-				notes: [
-					{ step: 0, pitch: 72, duration: 1 },
-					{ step: 2, pitch: 76, duration: 1 },
-					{ step: 4, pitch: 79, duration: 2 },
-					{ step: 8, pitch: 84, duration: 1 },
-					{ step: 10, pitch: 79, duration: 1 },
-					{ step: 12, pitch: 76, duration: 2 },
-				],
-			},
-			{
-				instrument: "snare",
-				notes: [
-					{ step: 4, pitch: snarePitch, duration: 1 },
-					{ step: 12, pitch: snarePitch, duration: 1 },
-				],
-			},
-			{
-				instrument: "triangle",
-				notes: [
-					{ step: 1, pitch: 80, duration: 1 },
-					{ step: 5, pitch: 83, duration: 1 },
-					{ step: 9, pitch: 86, duration: 1 },
-					{ step: 13, pitch: 83, duration: 1 },
-				],
-			},
-		],
-	},
-	{
-		id: "proj_003",
-		name: "Forest Rain",
-		tempo: 85,
-		tracks: [
-			{
-				instrument: "pad",
-				notes: [
-					{ step: 0, pitch: 60, duration: 4 },
-					{ step: 4, pitch: 63, duration: 4 },
-					{ step: 8, pitch: 67, duration: 4 },
-					{ step: 12, pitch: 70, duration: 4 },
-				],
-			},
-			{
-				instrument: "bell",
-				notes: [
-					{ step: 2, pitch: 76, duration: 2 },
-					{ step: 7, pitch: 79, duration: 2 },
-					{ step: 10, pitch: 74, duration: 2 },
-					{ step: 14, pitch: 81, duration: 2 },
-				],
-			},
-			{
-				instrument: "bass",
-				notes: [
-					{ step: 0, pitch: 36, duration: 4 },
-					{ step: 8, pitch: 31, duration: 4 },
-				],
-			},
-		],
-	},
-	{
-		id: "proj_004",
-		name: "Neon Highway",
-		tempo: 128,
-		tracks: [
-			{
-				instrument: "sawtooth",
-				notes: [
-					{ step: 0, pitch: 67, duration: 2 },
-					{ step: 3, pitch: 71, duration: 2 },
-					{ step: 6, pitch: 74, duration: 2 },
-					{ step: 9, pitch: 79, duration: 2 },
-					{ step: 12, pitch: 74, duration: 2 },
-				],
-			},
-			{
-				instrument: "kick",
-				notes: [
-					{ step: 0, pitch: 36, duration: 1 },
-					{ step: 4, pitch: 36, duration: 1 },
-					{ step: 8, pitch: 36, duration: 1 },
-					{ step: 12, pitch: 36, duration: 1 },
-				],
-			},
-			{
-				instrument: "closed_hat",
-				notes: [
-					{ step: 2, pitch: 42, duration: 1 },
-					{ step: 6, pitch: 42, duration: 1 },
-					{ step: 10, pitch: 42, duration: 1 },
-					{ step: 14, pitch: 42, duration: 1 },
-				],
-			},
-		],
-	},
-	{
-		id: "proj_005",
-		name: "Lo-Fi Sunday",
-		tempo: 92,
-		tracks: [
-			{
-				instrument: "electric_piano",
-				notes: [
-					{ step: 0, pitch: 60, duration: 3 },
-					{ step: 4, pitch: 64, duration: 3 },
-					{ step: 8, pitch: 67, duration: 3 },
-					{ step: 12, pitch: 64, duration: 3 },
-				],
-			},
-			{
-				instrument: "kick",
-				notes: [
-					{ step: 0, pitch: 36, duration: 1 },
-					{ step: 7, pitch: 36, duration: 1 },
-				],
-			},
-			{
-				instrument: "snare",
-				notes: [
-					{ step: 4, pitch: 38, duration: 1 },
-					{ step: 12, pitch: 38, duration: 1 },
-				],
-			},
-			{
-				instrument: "vinyl_noise",
-				notes: [
-					{ step: 0, pitch: 50, duration: 4 },
-					{ step: 8, pitch: 50, duration: 4 },
-				],
-			},
-		],
-	},
-];
 
 function Sidebar() {
 	return (
@@ -275,7 +99,7 @@ function DashboardHeader() {
 					Welcome Back, What’s new?
 				</h1>
 				<Link
-					to="#new-project"
+					to="/projects"
 					className="mt-1 shrink-0 rounded-lg bg-[#35cbb8] px-3 py-2 text-sm font-semibold text-[#061412] no-underline transition-colors hover:bg-[#63dfce] sm:px-4"
 				>
 					<Plus aria-hidden="true" className="mr-1 inline size-4" />
@@ -286,61 +110,124 @@ function DashboardHeader() {
 	);
 }
 
+function formatUpdatedDate(value) {
+	if (!value) return "Updated date unavailable";
+
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "Updated date unavailable";
+
+	return new Intl.DateTimeFormat(undefined, {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+	}).format(date);
+}
+
 function ProjectCard({ project }) {
+	const projectName = project.project_name || "Untitled project";
+
 	return (
 		<Link
 			to={`/projects/${project.id}`}
-			aria-label={`Open project ${project.name}`}
-			className="group relative flex h-full min-h-0 w-full items-end overflow-hidden rounded-[24px] border border-[#283444] bg-[#131c27] text-white no-underline transition-[transform,border-color,background-color] hover:-translate-y-1 hover:border-[#3a5661] hover:bg-[#172330] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#69e2d1]"
+			aria-label={`Open project ${projectName}`}
+			className="group relative flex h-full min-h-[180px] w-full items-end overflow-hidden rounded-[24px] border border-[#283444] bg-[#131c27] text-white no-underline transition-[transform,border-color,background-color] hover:-translate-y-1 hover:border-[#3a5661] hover:bg-[#172330] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#69e2d1]"
 		>
-			<div className="flex h-1/3 w-full items-center bg-gradient-to-r from-[#123b42]/95 to-[#1b3449]/95 px-4 opacity-90 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:px-5">
-				<h2 className="text-base font-medium sm:text-lg">{project.name}</h2>
+			{project.image && (
+				<img
+					src={project.image}
+					alt=""
+					className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105"
+				/>
+			)}
+			<div className="absolute inset-0 bg-gradient-to-t from-[#081016]/95 via-[#0b151d]/35 to-transparent" />
+			<div className="relative z-[1] w-full px-4 pb-4 pt-10 sm:px-5">
+				<h2 className="truncate text-base font-semibold sm:text-lg">
+					{projectName}
+				</h2>
+				<p className="mt-1 text-xs text-slate-300">
+					Updated {formatUpdatedDate(project.updated_at)}
+				</p>
 			</div>
 		</Link>
 	);
 }
 
-function ProjectsSection() {
+function ProjectsSection({ projects, isLoading, error }) {
 	return (
 		<section id="projects" aria-label="My projects" className="flex min-h-0 flex-1 flex-col">
-			<div className="mb-2 flex shrink-0 justify-end">
-				<Link
-					to="/projects"
-					className="font-mono text-xs text-white underline underline-offset-2"
-				>
-					view more →
-				</Link>
-			</div>
-			<div className="grid min-h-0 flex-1 grid-cols-2 grid-rows-3 gap-3 sm:gap-4 md:grid-cols-3 md:grid-rows-2 lg:gap-5">
-				{projects.map((project) => (
-					<ProjectCard key={project.id} project={project} />
-				))}
-				<Link
-					to="#new-project"
-					id="new-project"
-					aria-label="Create a new project"
-					className="group relative grid h-full min-h-0 w-full place-items-center overflow-hidden rounded-[24px] border border-dashed border-[#3b4a5c] bg-[#111923] text-white no-underline transition-colors hover:border-[#69e2d1] hover:bg-[#15232a] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#69e2d1]"
-				>
-					<span className="grid size-16 place-items-center rounded-full border border-[#69e2d1]/50 bg-[#172b32] text-[#69e2d1] transition-colors group-hover:bg-[#1e3a40]">
-						<Plus aria-hidden="true" className="size-10 stroke-[2.5]" />
-					</span>
-					<span className="absolute inset-x-0 bottom-0 translate-y-full bg-[#0b1218]/90 px-4 py-3 text-center text-sm font-medium opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
-						Create new project
-					</span>
-				</Link>
-			</div>
+
+			{isLoading ? (
+				<p role="status" className="py-8 text-center text-sm text-slate-300">
+					Loading your projects…
+				</p>
+			) : error ? (
+				<p role="alert" className="py-8 text-center text-sm text-red-300">
+					{error}
+				</p>
+			) : projects.length === 0 ? (
+				<p className="py-8 text-center text-sm text-slate-300">
+					You don’t have any projects yet.
+				</p>
+			) : (
+				<div className="grid min-h-0 flex-1 auto-rows-[minmax(180px,1fr)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:gap-4 md:grid-cols-3 lg:gap-5">
+					{projects.map((project) => (
+						<ProjectCard key={project.id} project={project} />
+					))}
+				</div>
+			)}
 		</section>
 	);
 }
 
 export default function Home() {
+	const navigate = useNavigate();
+	const [projects, setProjects] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		let isMounted = true;
+
+		async function loadProjects() {
+			try {
+				const { data: { user }, error: userError } = await supabase.auth.getUser();
+				if (userError) throw userError;
+
+				if (!user) {
+					navigate("/authentication", { replace: true });
+					return;
+				}
+
+				const { data, error: projectsError } = await supabase
+					.from("projects")
+					.select("id, project_name, updated_at, image")
+					.eq("user_id", user.id)
+					.order("updated_at", { ascending: false });
+
+				if (projectsError) throw projectsError;
+				if (isMounted) setProjects(data ?? []);
+			} catch (loadError) {
+				if (isMounted) {
+					setError(loadError.message || "Unable to load your projects.");
+				}
+			} finally {
+				if (isMounted) setIsLoading(false);
+			}
+		}
+
+		loadProjects();
+		return () => {
+			isMounted = false;
+		};
+	}, [navigate]);
+
 	return (
 		<main className="h-dvh overflow-hidden bg-[#090d12] font-[Geist,system-ui,sans-serif] text-slate-100">
 			<div className="flex h-full min-h-0 flex-col md:flex-row">
 				<Sidebar />
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-4 pt-2 sm:px-6 md:px-8 md:py-0 md:pb-5 lg:px-[31px]">
 					<DashboardHeader />
-					<ProjectsSection />
+					<ProjectsSection projects={projects} isLoading={isLoading} error={error} />
 				</div>
 			</div>
 		</main>

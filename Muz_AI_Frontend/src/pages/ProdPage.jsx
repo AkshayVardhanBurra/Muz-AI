@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { supabase } from '../lib/supabaseClient';
 
 // ============================================================================
 // 1. CONSTANTS & INITIAL DATA
@@ -18,6 +20,12 @@ const INITIAL_NOTES = [
   { id: "m11", pitch: 50, note: "D3", start: 0.0, duration: 4.5, velocity: 75 },
   { id: "m12", pitch: 46, note: "Bb2", start: 0.0, duration: 4.5, velocity: 72 }
 ];
+
+function readNotes(song) {
+  if (Array.isArray(song)) return song;
+  if (song && Array.isArray(song.notes)) return song.notes;
+  return [];
+}
 
 // Layout & Grid Constants
 const ROW_HEIGHT = 44;         // Height of each key row in pixels
@@ -216,6 +224,9 @@ function useToneEngine(volumePercent) {
 // ============================================================================
 
 const TopToolbar = ({
+  projectName,
+  onProjectNameChange,
+  isProjectReady,
   isPlaying,
   onPlay,
   onPause,
@@ -231,6 +242,14 @@ const TopToolbar = ({
     >
       {/* Left Transport Controls: Play, Pause/Stop, Rewind (to start) */}
       <div className="flex items-center space-x-4">
+        <Link
+          to="/home"
+          title="Go to home"
+          className="rounded-lg border border-white/20 px-4 py-3 text-sm font-medium text-white no-underline transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          Home
+        </Link>
+
         {/* Play Button (Green Rounded Square) */}
         <button
           onClick={onPlay}
@@ -275,6 +294,16 @@ const TopToolbar = ({
           </svg>
         </button>
       </div>
+
+      <input
+        type="text"
+        aria-label="Project name"
+        placeholder="Untitled Project"
+        value={projectName}
+        onChange={(event) => onProjectNameChange(event.target.value)}
+        disabled={!isProjectReady}
+        className="mx-4 min-w-0 max-w-64 flex-1 select-text rounded-lg border border-white/20 bg-[#171717] px-3 py-2 text-sm text-white placeholder:text-white/50 focus:border-white/50 focus:outline-none disabled:opacity-60"
+      />
 
       {/* Right-Center Volume & AI Assistant Button */}
       <div className="flex items-center space-x-12">
@@ -983,7 +1012,20 @@ const AiAssistantSidebar = ({
 // ============================================================================
 
 export default function ProdPage() {
-  const [notes, setNotes] = useState(INITIAL_NOTES);
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  const [notes, setNotes] = useState([]);
+  const [projectName, setProjectName] = useState('');
+  const [projectContext, setProjectContext] = useState(null);
+  const [projectLoadState, setProjectLoadState] = useState(null);
+  const [saveError, setSaveError] = useState('');
+  const loadRequestRef = useRef({ key: null, promise: null });
+  const lastSavedNotesRef = useRef(null);
+  const lastSavedProjectNameRef = useRef(null);
+  const saveQueueRef = useRef(Promise.resolve());
+  const requestKey = projectId ?? 'new';
+  const isProjectReady =
+    projectLoadState?.key === requestKey && projectLoadState.ready;
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0.5); // Starts positioned like the reference green playhead
   const [volume, setVolume] = useState(48);
@@ -999,6 +1041,164 @@ export default function ProdPage() {
 
   const animFrameRef = useRef(null);
   const playbackStartRef = useRef({ wallClockMs: 0, startOffsetSec: 0 });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (loadRequestRef.current.key !== requestKey) {
+      loadRequestRef.current = {
+        key: requestKey,
+        promise: (async () => {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError) throw userError;
+          if (!user) {
+            return { requiresAuthentication: true };
+          }
+
+          if (projectId) {
+            const { data: existingProject, error: projectError } = await supabase
+              .from('projects')
+              .select('id, project_name, image, song')
+              .eq('id', projectId)
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (projectError) throw projectError;
+            if (existingProject) {
+              return { project: existingProject, userId: user.id, isNew: false };
+            }
+          }
+
+          const { data: newProject, error: insertError } = await supabase
+            .from('projects')
+            .insert({
+              project_name: 'Untitled Project',
+              image: '',
+              user_id: user.id,
+              song: { notes: INITIAL_NOTES },
+            })
+            .select('id, project_name, image, song')
+            .single();
+
+          if (insertError) throw insertError;
+          return { project: newProject, userId: user.id, isNew: true };
+        })(),
+      };
+    }
+
+    loadRequestRef.current.promise
+      .then((result) => {
+        if (!isMounted) return;
+
+        if (result.requiresAuthentication) {
+          navigate('/authentication', { replace: true });
+          return;
+        }
+
+        const projectNotes = result.isNew ? INITIAL_NOTES : readNotes(result.project.song);
+        lastSavedNotesRef.current = JSON.stringify(projectNotes);
+        const loadedProjectName = result.project.project_name || 'Untitled Project';
+        lastSavedProjectNameRef.current = loadedProjectName;
+        setNotes(projectNotes);
+        setProjectName(loadedProjectName);
+        setProjectContext({ id: result.project.id, userId: result.userId });
+        setProjectLoadState({ key: requestKey, ready: true, error: '' });
+        setSaveError('');
+
+        if (result.isNew) {
+          navigate(`/projects/${result.project.id}`, { replace: true });
+        }
+      })
+      .catch((loadError) => {
+        if (isMounted) {
+          setProjectLoadState({
+            key: requestKey,
+            ready: false,
+            error: loadError.message || 'Unable to load or create this project.',
+          });
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, projectId, requestKey]);
+
+  useEffect(() => {
+    if (!isProjectReady || !projectContext) return undefined;
+
+    const serializedNotes = JSON.stringify(notes);
+    if (serializedNotes === lastSavedNotesRef.current) return undefined;
+
+    let isActive = true;
+    const timeoutId = setTimeout(() => {
+      saveQueueRef.current = saveQueueRef.current
+        .then(async () => {
+        const { data: updatedProject, error: updateError } = await supabase
+            .from('projects')
+            .update({
+              song: { notes },
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', projectContext.id)
+          .eq('user_id', projectContext.userId)
+          .select('id')
+          .maybeSingle();
+
+        if (updateError) throw updateError;
+        if (!updatedProject) throw new Error('Project could not be saved.');
+        lastSavedNotesRef.current = serializedNotes;
+          if (isActive) setSaveError('');
+        })
+        .catch((updateError) => {
+          if (isActive) {
+            setSaveError(updateError.message || 'Unable to save project changes.');
+          }
+        });
+    }, 500);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+    };
+  }, [isProjectReady, notes, projectContext]);
+
+  useEffect(() => {
+    if (!isProjectReady || !projectContext) return undefined;
+    if (projectName === lastSavedProjectNameRef.current) return undefined;
+
+    let isActive = true;
+    const timeoutId = setTimeout(() => {
+      saveQueueRef.current = saveQueueRef.current
+        .then(async () => {
+          const { data: updatedProject, error: updateError } = await supabase
+            .from('projects')
+            .update({
+              project_name: projectName,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', projectContext.id)
+            .eq('user_id', projectContext.userId)
+            .select('id')
+            .maybeSingle();
+
+          if (updateError) throw updateError;
+          if (!updatedProject) throw new Error('Project name could not be saved.');
+          lastSavedProjectNameRef.current = projectName;
+          if (isActive) setSaveError('');
+        })
+        .catch((updateError) => {
+          if (isActive) {
+            setSaveError(updateError.message || 'Unable to save the project name.');
+          }
+        });
+    }, 500);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+    };
+  }, [isProjectReady, projectContext, projectName]);
 
   // Calculate sequence end time (with comfortable tail buffer)
   const sequenceEndTime = useMemo(() => {
@@ -1097,10 +1297,31 @@ export default function ProdPage() {
     setSelectedNoteId((prevId) => (prevId === id ? null : prevId));
   }, []);
 
+  if (!isProjectReady) {
+    const projectError =
+      projectLoadState?.key === requestKey ? projectLoadState.error : '';
+
+    return (
+      <main className="grid h-screen place-items-center bg-[#16171d] p-6 text-white">
+        <p role={projectError ? 'alert' : 'status'}>
+          {projectError || 'Loading project…'}
+        </p>
+      </main>
+    );
+  }
+
   return (
     <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#16171d] font-sans">
+      {saveError && (
+        <p role="alert" className="absolute left-1/2 top-2 z-50 -translate-x-1/2 rounded-lg bg-red-900 px-4 py-2 text-sm text-white">
+          {saveError}
+        </p>
+      )}
       {/* 1. Top Transport, Volume & AI Button Toolbar */}
       <TopToolbar
+        projectName={projectName}
+        onProjectNameChange={setProjectName}
+        isProjectReady={isProjectReady}
         isPlaying={isPlaying}
         onPlay={handlePlay}
         onPause={handlePause}
