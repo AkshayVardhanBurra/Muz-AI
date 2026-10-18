@@ -4,20 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 // 1. CONSTANTS & INITIAL DATA
 // ============================================================================
 
-const INITIAL_NOTES = [
-  { id: "m1", pitch: 62, note: "D4", start: 0.0, duration: 0.35, velocity: 85 },
-  { id: "m2", pitch: 62, note: "D4", start: 0.35, duration: 0.35, velocity: 85 },
-  { id: "m3", pitch: 74, note: "D5", start: 0.7, duration: 0.6, velocity: 95 },
-  { id: "m4", pitch: 69, note: "A4", start: 1.4, duration: 0.5, velocity: 90 },
-  { id: "m5", pitch: 68, note: "G#4", start: 2.0, duration: 0.4, velocity: 88 },
-  { id: "m6", pitch: 67, note: "G4", start: 2.5, duration: 0.4, velocity: 86 },
-  { id: "m7", pitch: 65, note: "F4", start: 3.0, duration: 0.3, velocity: 85 },
-  { id: "m8", pitch: 62, note: "D4", start: 3.3, duration: 0.25, velocity: 80 },
-  { id: "m9", pitch: 65, note: "F4", start: 3.55, duration: 0.25, velocity: 82 },
-  { id: "m10", pitch: 67, note: "G4", start: 3.8, duration: 0.3, velocity: 85 },
-  { id: "m11", pitch: 50, note: "D3", start: 0.0, duration: 4.5, velocity: 75 },
-  { id: "m12", pitch: 46, note: "Bb2", start: 0.0, duration: 4.5, velocity: 72 }
-];
+
 
 // Layout & Grid Constants
 const ROW_HEIGHT = 44;         // Height of each key row in pixels
@@ -982,6 +969,21 @@ const AiAssistantSidebar = ({
 // 9. MAIN APPLICATION COMPONENT
 // ============================================================================
 
+const INITIAL_NOTES = [
+  { id: "m1", pitch: 62, note: "D4", start: 0.0, duration: 0.35, velocity: 85 },
+  { id: "m2", pitch: 62, note: "D4", start: 0.35, duration: 0.35, velocity: 85 },
+  { id: "m3", pitch: 74, note: "D5", start: 0.7, duration: 0.6, velocity: 95 },
+  { id: "m4", pitch: 69, note: "A4", start: 1.4, duration: 0.5, velocity: 90 },
+  { id: "m5", pitch: 68, note: "G#4", start: 2.0, duration: 0.4, velocity: 88 },
+  { id: "m6", pitch: 67, note: "G4", start: 2.5, duration: 0.4, velocity: 86 },
+  { id: "m7", pitch: 65, note: "F4", start: 3.0, duration: 0.3, velocity: 85 },
+  { id: "m8", pitch: 62, note: "D4", start: 3.3, duration: 0.25, velocity: 80 },
+  { id: "m9", pitch: 65, note: "F4", start: 3.55, duration: 0.25, velocity: 82 },
+  { id: "m10", pitch: 67, note: "G4", start: 3.8, duration: 0.3, velocity: 85 },
+  { id: "m11", pitch: 50, note: "D3", start: 0.0, duration: 4.5, velocity: 75 },
+  { id: "m12", pitch: 46, note: "Bb2", start: 0.0, duration: 4.5, velocity: 72 }
+];
+
 export default function ProdPage() {
   const [notes, setNotes] = useState(INITIAL_NOTES);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -990,7 +992,7 @@ export default function ProdPage() {
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [scrollLeft, setScrollLeft] = useState(0);
-
+  
   const {
     previewNote,
     stopAllAudio,
