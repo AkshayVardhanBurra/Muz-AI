@@ -861,6 +861,7 @@ const AiAssistantSidebar = ({
     { id: 'welcome', sender: 'ai', text: 'Hi! how can I help?' }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -871,56 +872,61 @@ const AiAssistantSidebar = ({
 
   if (!isOpen) return null;
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     const trimmed = inputValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || isSending) return;
 
-    const userMsg = { id: `u_${Date.now()}`, sender: 'user', text: trimmed };
-    const lower = trimmed.toLowerCase();
-    let replyText =
-      "I can help you compose! Try asking me to 'reset notes', 'harmonize melody', 'shift octave up', or 'add arpeggio'. Notice you can also drag any note bar freely without grid snapping!";
-
-    if (lower.includes('reset') || lower.includes('default') || lower.includes('original')) {
-      onSetNotes(INITIAL_NOTES);
-      replyText = "Restored the original 12-note D minor melody and bass progression!";
-    } else if (lower.includes('clear') || lower.includes('delete all')) {
-      onSetNotes([]);
-      replyText = "Cleared the piano roll. Double-click anywhere on the grid to place new notes!";
-    } else if (lower.includes('octave up') || lower.includes('higher')) {
-      onSetNotes(
-        notes.map((n) => {
-          const newPitch = Math.min(96, n.pitch + 12);
-          const key = PIANO_KEYS.find((k) => k.midi === newPitch);
-          return { ...n, pitch: newPitch, note: key ? key.note : n.note };
-        })
-      );
-      replyText = "Shifted all notes up by 1 octave (+12 semitones).";
-    } else if (lower.includes('octave down') || lower.includes('lower')) {
-      onSetNotes(
-        notes.map((n) => {
-          const newPitch = Math.max(36, n.pitch - 12);
-          const key = PIANO_KEYS.find((k) => k.midi === newPitch);
-          return { ...n, pitch: newPitch, note: key ? key.note : n.note };
-        })
-      );
-      replyText = "Shifted all notes down by 1 octave (-12 semitones).";
-    } else if (lower.includes('harmonize') || lower.includes('chord') || lower.includes('add')) {
-      const extraNotes = [
-        { id: `ai_${Date.now()}_1`, pitch: 77, note: "F5", start: 0.7, duration: 0.6, velocity: 82 },
-        { id: `ai_${Date.now()}_2`, pitch: 72, note: "C5", start: 1.4, duration: 0.5, velocity: 80 },
-        { id: `ai_${Date.now()}_3`, pitch: 70, note: "Bb4", start: 2.5, duration: 0.4, velocity: 80 }
-      ];
-      onSetNotes([...notes, ...extraNotes]);
-      replyText = "Added upper third harmonies (F5, C5, Bb4) to enrich your lead melody!";
-    }
-
+    const messageId = Date.now();
     setMessages((prev) => [
       ...prev,
-      userMsg,
-      { id: `ai_${Date.now()}`, sender: 'ai', text: replyText }
+      { id: `u_${messageId}`, sender: 'user', text: trimmed },
     ]);
     setInputValue('');
+    setIsSending(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-song-notes', {
+        body: { prompt: trimmed, notes },
+      });
+
+      if (error) throw error;
+      if (
+        !data ||
+        typeof data.message !== 'string' ||
+        typeof data.hasGeneratedNotes !== 'boolean' ||
+        !Array.isArray(data.notesGenerated) ||
+        !data.notesGenerated.every(
+          (generatedNote) =>
+            generatedNote !== null &&
+            typeof generatedNote === 'object' &&
+            !Array.isArray(generatedNote)
+        )
+      ) {
+        throw new Error('The AI returned an invalid response. Please try again.');
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_${messageId}`,
+          sender: 'ai',
+          text: data.message,
+          notesGenerated: data.hasGeneratedNotes ? data.notesGenerated : null,
+        },
+      ]);
+    } catch (requestError) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_${messageId}`,
+          sender: 'ai',
+          text: requestError.message || 'Unable to contact the AI assistant. Please try again.',
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -946,6 +952,27 @@ const AiAssistantSidebar = ({
                   style={{ backgroundColor: '#2e303e' }}
                 >
                   {msg.text}
+                  {msg.notesGenerated && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSetNotes((currentNotes) => [
+                          ...currentNotes,
+                          ...msg.notesGenerated,
+                        ]);
+                        setMessages((currentMessages) =>
+                          currentMessages.map((currentMessage) =>
+                            currentMessage.id === msg.id
+                              ? { ...currentMessage, notesGenerated: null }
+                              : currentMessage
+                          )
+                        );
+                      }}
+                      className="mt-3 block rounded-lg bg-[#52d13b] px-3 py-2 text-sm font-semibold text-[#101510] transition-colors hover:bg-[#70e85a]"
+                    >
+                      Add generated notes
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -964,20 +991,7 @@ const AiAssistantSidebar = ({
 
       {/* Quick Action Pills for Easy Testing */}
       <div className="flex flex-wrap gap-1.5 my-2.5 px-1">
-        {[
-          { label: 'Harmonize', cmd: 'Harmonize melody' },
-          { label: 'Octave +1', cmd: 'Shift octave up' },
-          { label: 'Reset Demo', cmd: 'Reset notes' }
-        ].map((chip) => (
-          <button
-            key={chip.label}
-            type="button"
-            onClick={() => setInputValue(chip.cmd)}
-            className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-neutral-700/80 text-white hover:bg-neutral-800 transition"
-          >
-            {chip.label}
-          </button>
-        ))}
+
         <button
           type="button"
           onClick={onClose}
@@ -997,10 +1011,19 @@ const AiAssistantSidebar = ({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder=""
+            placeholder="Ask for song notes…"
             autoFocus
+            disabled={isSending}
+            aria-label="Message the AI assistant"
             className="w-full bg-transparent text-white text-[18px] caret-white focus:outline-none"
           />
+          <button
+            type="submit"
+            disabled={isSending || !inputValue.trim()}
+            className="ml-3 shrink-0 rounded-md bg-[#52d13b] px-3 py-2 text-sm font-semibold text-[#101510] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSending ? 'Sending…' : 'Send'}
+          </button>
         </div>
       </form>
     </aside>
