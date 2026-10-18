@@ -956,9 +956,10 @@ const AiAssistantSidebar = ({
                     <button
                       type="button"
                       onClick={() => {
+                        
                         onSetNotes((currentNotes) => [
-                          ...currentNotes,
-                          ...msg.notesGenerated,
+                       
+                          ...msg.notesGenerated
                         ]);
                         setMessages((currentMessages) =>
                           currentMessages.map((currentMessage) =>

@@ -10,7 +10,7 @@ function Sidebar() {
 				to="/home"
 				className="mb-2 self-center px-2 py-1 text-xl font-bold tracking-tight text-white no-underline md:mb-8 md:text-[22px]"
 			>
-				MuzAI
+				MuzeAI
 			</Link>
 
 			<nav aria-label="Main navigation" className="flex flex-wrap gap-2 md:flex-col md:gap-2">
@@ -125,16 +125,16 @@ function formatUpdatedDate(value) {
 
 function ProjectCard({ project }) {
 	const projectName = project.project_name || "Untitled project";
-
+	console.log("The project link: " + project.image);
 	return (
 		<Link
 			to={`/projects/${project.id}`}
 			aria-label={`Open project ${projectName}`}
 			className="group relative flex h-full min-h-[180px] w-full items-end overflow-hidden rounded-[24px] border border-[#283444] bg-[#131c27] text-white no-underline transition-[transform,border-color,background-color] hover:-translate-y-1 hover:border-[#3a5661] hover:bg-[#172330] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#69e2d1]"
 		>
-			{project.image && (
+			{(
 				<img
-					src={project.image}
+					src={"https://us.123rf.com/450wm/sharuzzaman/sharuzzaman2605/sharuzzaman260506461/312413536-creative-music-background-collection-featuring-cinematic-instruments-neon-lights-and-atmospheric.jpg"}
 					alt=""
 					className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105"
 				/>
@@ -208,6 +208,7 @@ export default function Home() {
 				if (isMounted) setProjects(data ?? []);
 			} catch (loadError) {
 				if (isMounted) {
+					navigate("/authentication", { replace: true });
 					setError(loadError.message || "Unable to load your projects.");
 				}
 			} finally {
