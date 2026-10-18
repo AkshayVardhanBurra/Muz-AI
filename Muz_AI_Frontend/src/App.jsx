@@ -1,6 +1,7 @@
 import { createBrowserRouter, Link, Navigate, RouterProvider, useParams } from "react-router";
 import AuthPage from "./pages/AuthPage.jsx";
 import Home, { projects } from "./pages/Home.jsx";
+import ProdPage from "./pages/ProdPage.jsx";
 
 function ProjectsComingSoon() {
 	return (
@@ -46,11 +47,11 @@ const router = createBrowserRouter([
 	},
 	{
 		path: "/projects",
-		element: <ProjectsComingSoon />,
+		element: <ProdPage />,
 	},
 	{
 		path: "/projects/:projectId",
-		element: <ProjectComingSoon />,
+		element: <ProdPage />,
 	},
 	{
 		path: "/authentication",
